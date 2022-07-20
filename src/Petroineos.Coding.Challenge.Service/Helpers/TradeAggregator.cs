@@ -6,29 +6,28 @@ using Services;
 namespace Petroineos.Coding.Challenge.Service.Helpers
 {
     public class TradeAggregator : ITradeAggregator
-    {
+    {        
         public IEnumerable<PowerTradeVolume> Aggregate(IEnumerable<PowerTrade> trades)
         {
-            var aggregatedTrade = PowerTrade.Create(DateTime.MinValue, 24);
+            double[] volumes = new double[24];
 
-            for (int y = 0; y < 24; y++)
+            foreach (var trade in trades)
             {
-                double totalVolume = 0;
-                foreach (var trade in trades)
+                foreach (var period in trade.Periods)
                 {
-                    totalVolume += trade.Periods[y].Volume;
+                    volumes[period.Period-1] += period.Volume;
                 }
-
-                aggregatedTrade.Periods[y] = new PowerPeriod() { Period = y + 1, Volume = totalVolume };
-            }
+            };
 
             var records = new List<PowerTradeVolume>();
 
             var time = new TimeOnly(23, 0);
-            foreach (var period in aggregatedTrade.Periods)
+
+            var index = 0;
+            foreach (var volume in volumes)
             {
-                records.Add(new PowerTradeVolume() { LocalTime = time, Volume = period.Volume });
-                time = time.AddHours(1);
+                records.Add(new PowerTradeVolume() { LocalTime = time.AddHours(index), Volume = volume });
+                index++;
             }
 
             return records;
